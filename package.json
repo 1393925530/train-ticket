@@ -74,10 +74,13 @@
     "test": "node scripts/test.js"
   },
   "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
+    "extends": "react-app",
+    "plugins": [
+      "react-hooks"
+    ],
+    "rules": {
+      "react-hooks/rules-of-hooks": "error"
+    }
   },
   "browserslist": {
     "production": [
