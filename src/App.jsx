@@ -1,27 +1,33 @@
-import { useState, useEffect } from 'react'
-import './App.css'
+import {
+  useState,
+  PureComponent,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef,
+} from 'react'
 
-function App() {
-  const [count, setCount] = useState(0)
+function useCounter(count) {
+  const size = useSize()
+  return (
+    <h1>
+      {count}, {size.width} x {size.height}
+    </h1>
+  )
+}
+
+function useSize() {
   const [size, setSize] = useState({
     width: document.documentElement.clientWidth,
     height: document.documentElement.clientHeight,
   })
 
-  const onResize = () => {
+  const onResize = useCallback(() => {
     setSize({
       width: document.documentElement.clientWidth,
       height: document.documentElement.clientHeight,
     })
-  }
-
-  useEffect(() => {
-    console.log('count: ', count)
-  }, [count])
-
-  useEffect(() => {
-    document.title = count
-  })
+  }, [])
 
   useEffect(() => {
     window.addEventListener('resize', onResize, false)
@@ -31,32 +37,40 @@ function App() {
     }
   }, [])
 
-  const onClick = () => {
-    console.log('click')
-  }
+  return size
+}
+
+function useCount(defaultCount) {
+  const [count, setCount] = useState(defaultCount)
+
+  const it = useRef()
 
   useEffect(() => {
-    document.querySelector('#size').addEventListener('click', onClick, false)
+    it.current = setInterval(() => {
+      setCount((count) => count + 1)
+    }, 1000)
+  }, [])
 
-    return () => {
-      document
-        .querySelector('#size')
-        .removeEventListener('click', onClick, false)
+  useEffect(() => {
+    if (count >= 10) {
+      clearInterval(it.current)
     }
   })
 
+  return [count, setCount]
+}
+
+function App() {
+  const [count, setCount] = useCount(0)
+  const Counter = useCounter(count)
+  const size = useSize()
+
   return (
     <div>
-      <button onClick={() => setCount(count + 1)}>Click: ({count})</button>
-      {count % 2 ? (
-        <span id="size">
-          size: {size.width} x {size.height}
-        </span>
-      ) : (
-        <p id="size">
-          size: {size.width} x {size.height}
-        </p>
-      )}
+      <button onClick={() => setCount(count + 1)}>
+        Click: ({count}), {size.width} x {size.height}
+      </button>
+      {Counter}
     </div>
   )
 }
