@@ -5,74 +5,128 @@ import {
   useMemo,
   useCallback,
   useRef,
+  memo,
 } from 'react'
+import './App.css'
 
-function useCounter(count) {
-  const size = useSize()
+let idSeq = Date.now()
+
+const Control = memo(function Control(props) {
+  const { addTodo } = props
+
+  const inputRef = useRef()
+
+  const onSubmit = (e) => {
+    e.preventDefault()
+
+    const newText = inputRef.current.value.trim()
+
+    if (newText.length === 0) {
+      return
+    }
+
+    addTodo({ id: ++idSeq, text: newText, complete: false })
+
+    inputRef.current.value = ''
+  }
+
   return (
-    <h1>
-      {count}, {size.width} x {size.height}
-    </h1>
+    <div className="control">
+      <h1>TODOS</h1>
+      <form onSubmit={onSubmit}>
+        <input
+          type="text"
+          ref={inputRef}
+          className="new-todo"
+          placeholder="What needs to be done"
+        />
+      </form>
+    </div>
   )
-}
+})
 
-function useSize() {
-  const [size, setSize] = useState({
-    width: document.documentElement.clientWidth,
-    height: document.documentElement.clientHeight,
-  })
+const TodoItem = memo(function TodoItem(props) {
+  const {
+    todo: { id, text, complete },
+    toggleTodo,
+    removeTodo,
+  } = props
 
-  const onResize = useCallback(() => {
-    setSize({
-      width: document.documentElement.clientWidth,
-      height: document.documentElement.clientHeight,
-    })
-  }, [])
+  const onChange = () => {
+    toggleTodo(id)
+  }
 
-  useEffect(() => {
-    window.addEventListener('resize', onResize, false)
-
-    return () => {
-      window.removeEventListener('resize', onResize, false)
-    }
-  }, [])
-
-  return size
-}
-
-function useCount(defaultCount) {
-  const [count, setCount] = useState(defaultCount)
-
-  const it = useRef()
-
-  useEffect(() => {
-    it.current = setInterval(() => {
-      setCount((count) => count + 1)
-    }, 1000)
-  }, [])
-
-  useEffect(() => {
-    if (count >= 10) {
-      clearInterval(it.current)
-    }
-  })
-
-  return [count, setCount]
-}
-
-function App() {
-  const [count, setCount] = useCount(0)
-  const Counter = useCounter(count)
-  const size = useSize()
+  const onRemove = () => {
+    removeTodo(id)
+  }
 
   return (
-    <div>
-      <button onClick={() => setCount(count + 1)}>
-        Click: ({count}), {size.width} x {size.height}
-      </button>
-      {Counter}
+    <li className="todo-item">
+      <input type="checkbox" onChange={onChange} checked={complete} />
+      <label className={complete ? 'complete' : ''}>{text}</label>
+      <button onClick={onRemove}>&#xd7;</button>
+    </li>
+  )
+})
+
+const Todos = memo(function Todos(props) {
+  const { todos, toggleTodo, removeTodo } = props
+  return (
+    <ul>
+      {todos.map((todo) => {
+        return (
+          <TodoItem
+            key={todo.id}
+            todo={todo}
+            toggleTodo={toggleTodo}
+            removeTodo={removeTodo}
+          />
+        )
+      })}
+    </ul>
+  )
+})
+
+const LS_KEY = '_$-todos_'
+
+function TodoList() {
+  const [todos, setTodos] = useState([])
+
+  const addTodo = useCallback((todo) => {
+    setTodos((todos) => [...todos, todo])
+  }, [])
+
+  const removeTodo = useCallback((id) => {
+    setTodos((todos) =>
+      todos.filter((todo) => {
+        return todo.id !== id
+      })
+    )
+  }, [])
+
+  const toggleTodo = useCallback((id) => {
+    setTodos((todos) =>
+      todos.map((todo) => {
+        return todo.id === id ? { ...todo, complete: !todo.complete } : todo
+      })
+    )
+  }, [])
+
+  useEffect(() => {
+    const todos = JSON.parse(localStorage.getItem(LS_KEY))
+    setTodos(todos)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem(LS_KEY, JSON.stringify(todos))
+  }, [todos])
+
+  return (
+    <div className="todo-list">
+      <Control addTodo={addTodo} />
+      <Todos removeTodo={removeTodo} toggleTodo={toggleTodo} todos={todos} />
     </div>
   )
 }
 
-export default App
+export default TodoList
