@@ -1,4 +1,5 @@
 const express = require('express')
+const fs = require('fs')
 
 const app = express()
 
@@ -8,10 +9,12 @@ app.get('/', (request, response) => {
   response.end()
 })
 
-app.get('/rest', (request, response) => {
-  response.json({
-    result: 1,
-    msg: 'hELLO'
+app.get('/rest/cities', (request, response) => {
+  fs.readFile('./data/city.json', function (err, data) {
+    if (err) {
+      res.send(err)
+    }
+    response.json(JSON.parse(data.toString()))
   })
 })
 

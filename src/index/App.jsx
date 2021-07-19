@@ -9,10 +9,24 @@ import HighSpeed from './HighSpeed'
 import Journey from './Journey'
 import Submit from './Submit'
 
-import { exchangeFromTo, showCitySelector } from './actions'
+import CitySelector from '../common/CitySelector'
+
+import {
+  exchangeFromTo,
+  showCitySelector,
+  hideCitySelector,
+  fetchCityData,
+} from './actions'
 
 function App(props) {
-  const { from, to, dispatch } = props
+  const {
+    from,
+    to,
+    isCitySelectorVisible,
+    cityData,
+    isLoadingCityData,
+    dispatch,
+  } = props
 
   const onBack = useCallback(() => {
     window.history.back()
@@ -23,6 +37,17 @@ function App(props) {
       {
         exchangeFromTo,
         showCitySelector,
+        hideCitySelector,
+      },
+      dispatch
+    )
+  }, [])
+
+  const citySelectorCbs = useMemo(() => {
+    return bindActionCreators(
+      {
+        onBack: hideCitySelector,
+        fetchCityData,
       },
       dispatch
     )
@@ -39,6 +64,12 @@ function App(props) {
         <HighSpeed />
         <Submit />
       </form>
+      <CitySelector
+        show={isCitySelectorVisible}
+        cityData={cityData}
+        isLoading={isLoadingCityData}
+        {...citySelectorCbs}
+      />
     </div>
   )
 }
